@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "pyaesthetics-api"
+version = "0.1.0"
+description = ""
+authors = ["Shunsuke KITADA <shunsuke.kitada.0831@gmail.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+pyaesthetics = "^0.0.7.6"
+fastapi = "^0.110.2"
+uvicorn = { extras = ["standard"], version = "^0.29.0" }
+python-multipart = "^0.0.9"
+scikit-image = "^0.23.2"
+
+[tool.poetry.group.dev.dependencies]
+ruff = ">=0.1.0"
+black = ">=22.1.0"
+isort = ">=5.0.0"
+mypy = ">=1.0.0"
+pytest = ">=6.0.0"
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
