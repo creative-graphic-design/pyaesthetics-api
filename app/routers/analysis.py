@@ -109,6 +109,7 @@ async def analyze_image(
             minStd=min_std,
             minSize=min_size,
         )
+
     return AnalysisOutput(
         colorfulness=Colorfulness(
             hsv=output["Colorfulness_HSV"], rgb=output["Colorfulness_RGB"]
@@ -117,7 +118,8 @@ async def analyze_image(
             W3CColor(color_name=c[0], percentage_of_pixels=c[1])
             for c in output["Colors"]
         ],
-        faces=output["Faces"].tolist(),
+        # faces=output["Faces"].tolist(),
+        faces=output["Faces"],
         num_of_faces=output["Number_of_Faces"],
         num_of_images=output["Number_of_Images"],
         symmetry_qtd=output["Symmetry_QTD"],
