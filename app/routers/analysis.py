@@ -5,11 +5,16 @@ import cv2
 import numpy as np
 from fastapi import APIRouter, File, Query, UploadFile
 from pyaesthetics.analysis import analyzeImage, textDetection
+from pyaesthetics.selfsimilarity import selfsimilarity
 from pydantic import BaseModel
 
 AnalysisMethodType = Literal["complete", "fast"]
 
 router = APIRouter(prefix="/analysis", tags=["Analysis"])
+
+
+class Analysis(BaseModel):
+    text: int
 
 
 class Brightness(BaseModel):
@@ -27,20 +32,32 @@ class W3CColor(BaseModel):
     percentage_of_pixels: float
 
 
-class AnalysisOutput(BaseModel):
-    colorfulness: Colorfulness
-    colors: List[W3CColor]
+class FaceDetection(BaseModel):
     faces: List[Tuple[int, int, int, int]]
-    num_of_faces: int
-    num_of_images: int
-    symmetry_qtd: float
-    text: int
-    text_image_ratio: float
+    num_faces: int
+
+
+class QuadTreeDecomposition(BaseModel):
     vc_quad_tree: int
     vc_weight: int
-    brightness: Brightness
-    image_area: int
+
+
+class SpaceBasedDecomposition(BaseModel):
+    num_images: int
+    text_image_ratio: float
     text_area: int
+    image_area: int
+
+
+class ImageAnalysisOutput(BaseModel):
+    analysis: Analysis
+    brightness: Brightness
+    color_detection: List[W3CColor]
+    colorfulness: Colorfulness
+    face_detection: FaceDetection
+    quad_tree_decomposition: QuadTreeDecomposition
+    space_based_decomposition: SpaceBasedDecomposition
+    symmetry: float
 
 
 @router.post(
@@ -65,7 +82,7 @@ async def analyze_image(
     method: Annotated[
         AnalysisMethodType,
         Query(
-            description="sets to analysis to use. Valid methods are `fast`, `complete`. Default is `fast`."
+            description="sets to analysis to use. Valid methods are `fast`, `complete`. Default is `complete`."
         ),
     ] = "complete",
     is_resize: Annotated[
@@ -95,7 +112,10 @@ async def analyze_image(
     min_size: Annotated[
         int, Query(description="minimum size for the Quadratic Tree Decomposition")
     ] = 20,
-) -> AnalysisOutput:
+    max_level: Annotated[
+        int, Query(description="Maximum number of level to analyze")
+    ] = 4,
+) -> ImageAnalysisOutput:
     """This endpoint acts as entrypoint for the automatic analysis of an image aesthetic features."""
     with NamedTemporaryFile() as temp_file:
         content = await image_file.read()
@@ -110,26 +130,29 @@ async def analyze_image(
             minSize=min_size,
         )
 
-    return AnalysisOutput(
-        colorfulness=Colorfulness(
-            hsv=output["Colorfulness_HSV"], rgb=output["Colorfulness_RGB"]
-        ),
-        colors=[
-            W3CColor(color_name=c[0], percentage_of_pixels=c[1])
-            for c in output["Colors"]
-        ],
-        # faces=output["Faces"].tolist(),
-        faces=output["Faces"],
-        num_of_faces=output["Number_of_Faces"],
-        num_of_images=output["Number_of_Images"],
-        symmetry_qtd=output["Symmetry_QTD"],
-        text=output["Text"],
-        text_image_ratio=output["TextImageRatio"],
-        vc_quad_tree=output["VC_quadTree"],
-        vc_weight=output["VC_weight"],
+    return ImageAnalysisOutput(
+        analysis=Analysis(text=output["Text"]),
         brightness=Brightness(
             bt601=output["brightness_BT601"], bt709=output["brightness_BT709"]
         ),
-        image_area=output["imageArea"],
-        text_area=output["textArea"],
+        color_detection=[
+            W3CColor(color_name=c[0], percentage_of_pixels=c[1])
+            for c in output["Colors"]
+        ],
+        colorfulness=Colorfulness(
+            hsv=output["Colorfulness_HSV"], rgb=output["Colorfulness_RGB"]
+        ),
+        face_detection=FaceDetection(
+            faces=output["Faces"], num_faces=output["Number_of_Faces"]
+        ),
+        quad_tree_decomposition=QuadTreeDecomposition(
+            vc_quad_tree=output["VC_quadTree"], vc_weight=output["VC_weight"]
+        ),
+        space_based_decomposition=SpaceBasedDecomposition(
+            num_images=output["Number_of_Images"],
+            text_image_ratio=output["TextImageRatio"],
+            text_area=output["textArea"],
+            image_area=output["imageArea"],
+        ),
+        symmetry=output["Symmetry_QTD"],
     )
