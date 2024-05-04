@@ -37,9 +37,9 @@ class FaceDetection(BaseModel):
     num_faces: int
 
 
-class QuadTreeDecomposition(BaseModel):
-    vc_quad_tree: int
-    vc_weight: int
+class VisualComplexity(BaseModel):
+    quad_tree: int
+    weight: int
 
 
 class SpaceBasedDecomposition(BaseModel):
@@ -55,7 +55,7 @@ class ImageAnalysisOutput(BaseModel):
     color_detection: List[W3CColor]
     colorfulness: Colorfulness
     face_detection: FaceDetection
-    quad_tree_decomposition: QuadTreeDecomposition
+    visual_complexity: VisualComplexity
     space_based_decomposition: SpaceBasedDecomposition
     symmetry: float
 
@@ -145,8 +145,8 @@ async def analyze_image(
         face_detection=FaceDetection(
             faces=output["Faces"], num_faces=output["Number_of_Faces"]
         ),
-        quad_tree_decomposition=QuadTreeDecomposition(
-            vc_quad_tree=output["VC_quadTree"], vc_weight=output["VC_weight"]
+        visual_complexity=VisualComplexity(
+            quad_tree=output["VC_quadTree"], weight=output["VC_weight"]
         ),
         space_based_decomposition=SpaceBasedDecomposition(
             num_images=output["Number_of_Images"],
